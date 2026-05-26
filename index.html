@@ -76,22 +76,28 @@
         <button id="themeSpring" style="width: 100%; text-align: left; padding: 10px 1rem; border: 2px solid #90c695; background: transparent; color: #90c695; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; border-radius: 8px; margin-bottom: 6px;">
           <i class="ti ti-flower" style="margin-right: 6px;"></i>Spring
         </button>
-        <button id="themeWinter" style="width: 100%; text-align: left; padding: 10px 1rem; border: 2px solid #7dd3fc; background: transparent; color: #7dd3fc; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; border-radius: 8px;">
+        <button id="themeWinter" style="width: 100%; text-align: left; padding: 10px 1rem; border: 2px solid #7dd3fc; background: transparent; color: #7dd3fc; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; border-radius: 8px; margin-bottom: 6px;">
           <i class="ti ti-snowflake" style="margin-right: 6px;"></i>Winter
+        </button>
+        <button id="themeSummer" style="width: 100%; text-align: left; padding: 10px 1rem; border: 2px solid #fbbf24; background: transparent; color: #fbbf24; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; border-radius: 8px;">
+          <i class="ti ti-sun" style="margin-right: 6px;"></i>Summer
         </button>
       </div>
 
       <div style="border-top: 1px solid #444; padding-top: 1rem;">
         <div style="font-size: 12px; font-weight: 600; color: var(--accent); padding: 0.75rem 1rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">🖼️ Wallpaper</div>
-        <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
           <button id="wallpaperPrev" style="width: 36px; height: 36px; border: 2px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; font-size: 16px; font-family: inherit; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
             <i class="ti ti-chevron-left"></i>
           </button>
-          <span id="wallpaperName" style="flex: 1; text-align: center; font-size: 12px; color: #d4c5b0; font-weight: 500;">Queenstown</span>
+          <span id="wallpaperName" style="flex: 1; text-align: center; font-size: 12px; color: #d4c5b0; font-weight: 500;">Queenstown Lake</span>
           <button id="wallpaperNext" style="width: 36px; height: 36px; border: 2px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; font-size: 16px; font-family: inherit; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
             <i class="ti ti-chevron-right"></i>
           </button>
         </div>
+        <button id="removeWallpaperBtn" style="width: 100%; text-align: left; padding: 10px 1rem; border: 2px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; border-radius: 8px;">
+          <i class="ti ti-x" style="margin-right: 6px;"></i>Remove Wallpaper
+        </button>
       </div>
     </div>
     
@@ -240,11 +246,21 @@
       applyWallpaper((currentWallpaper + 1) % wallpapers.length);
     });
 
+    document.getElementById('removeWallpaperBtn').addEventListener('click', () => {
+      document.body.style.background = 'linear-gradient(180deg, #1a1410 0%, #2a2319 50%, #1a1410 100%)';
+      document.body.style.backgroundAttachment = 'fixed';
+      localStorage.setItem('selectedWallpaper', '-1');
+      document.getElementById('wallpaperName').textContent = 'None';
+      currentWallpaper = -1;
+      console.log('✓ Wallpaper removed');
+    });
+
     // ============ THEME DEFINITIONS ============
     const themes = {
       autumn: { primary: '#d4a574', secondary: '#c97a4a', dark: '#2a2319', darkest: '#1a1410', accent: '#8b6f47' },
       spring: { primary: '#90c695', secondary: '#7ab88d', dark: '#1a2819', darkest: '#0f1810', accent: '#5a8f5f' },
-      winter: { primary: '#7dd3fc', secondary: '#38bdf8', dark: '#1a2838', darkest: '#0f1820', accent: '#0284c7' }
+      winter: { primary: '#7dd3fc', secondary: '#38bdf8', dark: '#1a2838', darkest: '#0f1820', accent: '#0284c7' },
+      summer: { primary: '#fbbf24', secondary: '#f59e0b', dark: '#1f2937', darkest: '#111827', accent: '#d97706' }
     };
 
     let currentTheme = localStorage.getItem('selectedTheme') || 'autumn';
@@ -266,6 +282,7 @@
     document.getElementById('themeAutumn').addEventListener('click', () => applyTheme('autumn'));
     document.getElementById('themeSpring').addEventListener('click', () => applyTheme('spring'));
     document.getElementById('themeWinter').addEventListener('click', () => applyTheme('winter'));
+    document.getElementById('themeSummer').addEventListener('click', () => applyTheme('summer'));
 
     // ============ DATA MANAGEMENT ============
     let allTasks = JSON.parse(localStorage.getItem('workTasks')) || [];
@@ -402,6 +419,7 @@
         frequency: frequencyInput.value,
         date: dateInput.value,
         completed: false,
+        description: '',
         subtasks: [],
         createdAt: new Date().toISOString()
       });
@@ -550,8 +568,59 @@
         title.textContent = task.text;
         content.appendChild(title);
         
+        // Description toggle
+        if (task.description) {
+          const descDiv = document.createElement('div');
+          descDiv.style.cssText = 'font-size: 13px; color: #a8a89b; margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; word-break: break-word;';
+          descDiv.textContent = task.description;
+          descDiv.style.cursor = 'pointer';
+          descDiv.addEventListener('click', () => {
+            const newDesc = prompt('Edit description:', task.description);
+            if (newDesc !== null) {
+              task.description = newDesc.trim();
+              saveTasks();
+              refreshDisplay();
+            }
+          });
+          content.appendChild(descDiv);
+        } else {
+          const addDescBtn = document.createElement('button');
+          addDescBtn.style.cssText = 'font-size: 12px; color: var(--primary); background: transparent; border: none; cursor: pointer; padding: 0; margin-top: 6px; font-family: inherit;';
+          addDescBtn.innerHTML = '<i class="ti ti-note" style="margin-right: 4px;"></i>Add description';
+          addDescBtn.addEventListener('click', () => {
+            const desc = prompt('Add description:');
+            if (desc !== null && desc.trim()) {
+              task.description = desc.trim();
+              saveTasks();
+              refreshDisplay();
+            }
+          });
+          content.appendChild(addDescBtn);
+        }
+        
         const meta = document.createElement('div');
         meta.style.cssText = 'display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap;';
+        
+        // Priority buttons
+        const priorityButtons = document.createElement('div');
+        priorityButtons.style.cssText = 'display: flex; gap: 6px;';
+        
+        const priorities = ['none', 'p1', 'p2', 'p3'];
+        const priorityColors = { 'none': '#666', 'p1': '#ff4444', 'p2': '#ffaa00', 'p3': '#44aa44' };
+        const priorityLabels = { 'none': '○', 'p1': 'P1', 'p2': 'P2', 'p3': 'P3' };
+        
+        priorities.forEach(priority => {
+          const btn = document.createElement('button');
+          btn.style.cssText = `padding: 6px 10px; border-radius: 6px; border: 2px solid ${priorityColors[priority]}; background: ${task.priority === priority ? priorityColors[priority] + '40' : 'transparent'}; color: ${priorityColors[priority]}; cursor: pointer; font-size: 12px; font-weight: 600; font-family: inherit; transition: all 0.2s;`;
+          btn.textContent = priorityLabels[priority];
+          btn.addEventListener('click', () => {
+            task.priority = priority;
+            saveTasks();
+            refreshDisplay();
+          });
+          priorityButtons.appendChild(btn);
+        });
+        meta.appendChild(priorityButtons);
         
         if (task.date) {
           const dateSpan = document.createElement('span');
