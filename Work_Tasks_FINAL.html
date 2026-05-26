@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Work Tasks Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/tabler-icons.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    
+    :root {
+      --primary: #d4a574;
+      --secondary: #c97a4a;
+      --dark: #2a2319;
+      --darkest: #1a1410;
+      --accent: #8b6f47;
+    }
+
+    body { background: transparent; }
+    input, select, button { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <div style="display: grid; grid-template-columns: 220px 1fr; gap: 0; width: 100vw; height: 100vh; background: transparent; margin: 0; padding: 0; position: fixed; top: 0; left: 0; z-index: 1;">
+    
+    <!-- SIDEBAR -->
+    <div style="background: linear-gradient(180deg, var(--dark) 0%, var(--darkest) 100%); border-right: 3px solid var(--primary); padding: 2rem 1rem; overflow-y: auto;">
+      <div style="margin-bottom: 2.5rem;">
+        <div style="font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem;">
+          <i class="ti ti-briefcase" style="font-size: 28px; margin-right: 8px;"></i>Work Tasks
+        </div>
+        <div style="font-size: 11px; color: #9b7d62; font-style: italic;">📍 Local Only</div>
+        <div id="lastSync" style="font-size: 10px; color: var(--accent); margin-top: 4px;"></div>
+      </div>
+      
+      <div style="margin-bottom: 2rem;">
+        <div style="font-size: 12px; font-weight: 600; color: var(--accent); padding: 0.75rem 1rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Views</div>
+        <button class="view-btn" data-view="today" style="width: 100%; text-align: left; padding: 12px 1rem; border: none; background: transparent; color: #d4c5b0; cursor: pointer; font-size: 15px; border-left: 4px solid transparent; transition: all 0.2s; margin-bottom: 8px;">
+          <i class="ti ti-sun" style="margin-right: 10px; color: #e8a76a; font-size: 18px;"></i>Today
+        </button>
+        <button class="view-btn" data-view="upcoming" style="width: 100%; text-align: left; padding: 12px 1rem; border: none; background: transparent; color: #d4c5b0; cursor: pointer; font-size: 15px; border-left: 4px solid transparent; margin-bottom: 8px;">
+          <i class="ti ti-calendar" style="margin-right: 10px; color: var(--primary); font-size: 18px;"></i>Upcoming
+        </button>
+        <button class="view-btn" data-view="all" style="width: 100%; text-align: left; padding: 12px 1rem; border: none; background: transparent; color: #d4c5b0; cursor: pointer; font-size: 15px; border-left: 4px solid transparent; margin-bottom: 8px;">
+          <i class="ti ti-inbox" style="margin-right: 10px; color: #c97a4a; font-size: 18px;"></i>All Tasks
+        </button>
+        <button class="view-btn" data-view="overdue" style="width: 100%; text-align: left; padding: 12px 1rem; border: none; background: transparent; color: #d4c5b0; cursor: pointer; font-size: 15px; border-left: 4px solid transparent;">
+          <i class="ti ti-alert-circle" style="margin-right: 10px; color: #a85a42; font-size: 18px;"></i>Overdue
+        </button>
+      </div>
+      
+      <div style="margin-bottom: 2rem;">
+        <div style="font-size: 12px; font-weight: 600; color: var(--accent); padding: 0.75rem 1rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Projects</div>
+        <div id="projectsList" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem;"></div>
+        <button id="addProjectBtn" style="width: 100%; text-align: left; padding: 12px 1rem; border: none; background: transparent; color: var(--primary); cursor: pointer; font-size: 14px; font-family: inherit; font-weight: 500;">
+          <i class="ti ti-plus" style="margin-right: 6px; font-size: 16px;"></i>New Project
+        </button>
+      </div>
+
+      <div style="border-top: 1px solid #444; padding-top: 1.5rem; margin-bottom: 2rem;">
+        <div style="font-size: 12px; font-weight: 600; color: var(--accent); padding: 0.75rem 1rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Actions</div>
+        <button id="clearBtn" style="width: 100%; text-align: left; padding: 12px 1rem; border: none; background: transparent; color: var(--primary); cursor: pointer; font-size: 14px; font-family: inherit; font-weight: 500; margin-bottom: 8px;">
+          <i class="ti ti-trash" style="margin-right: 6px; font-size: 16px;"></i>Clear All
+        </button>
+        <button id="statsBtn" style="width: 100%; text-align: left; padding: 12px 1rem; border: none; background: transparent; color: var(--primary); cursor: pointer; font-size: 14px; font-family: inherit; font-weight: 500;">
+          <i class="ti ti-chart-bar" style="margin-right: 6px; font-size: 16px;"></i>Statistics
+        </button>
+      </div>
+
+      <div style="border-top: 1px solid #444; padding-top: 1rem; margin-bottom: 2rem;">
+        <div style="font-size: 12px; font-weight: 600; color: var(--accent); padding: 0.75rem 1rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">🎨 Theme</div>
+        <button id="themeAutumn" style="width: 100%; text-align: left; padding: 10px 1rem; border: 2px solid #d4a574; background: transparent; color: #d4a574; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; border-radius: 8px; margin-bottom: 6px;">
+          <i class="ti ti-leaf" style="margin-right: 6px;"></i>Autumn
+        </button>
+        <button id="themeSpring" style="width: 100%; text-align: left; padding: 10px 1rem; border: 2px solid #90c695; background: transparent; color: #90c695; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; border-radius: 8px; margin-bottom: 6px;">
+          <i class="ti ti-flower" style="margin-right: 6px;"></i>Spring
+        </button>
+        <button id="themeWinter" style="width: 100%; text-align: left; padding: 10px 1rem; border: 2px solid #7dd3fc; background: transparent; color: #7dd3fc; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; border-radius: 8px;">
+          <i class="ti ti-snowflake" style="margin-right: 6px;"></i>Winter
+        </button>
+      </div>
+
+      <div style="border-top: 1px solid #444; padding-top: 1rem;">
+        <div style="font-size: 12px; font-weight: 600; color: var(--accent); padding: 0.75rem 1rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">🖼️ Wallpaper</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button id="wallpaperPrev" style="width: 36px; height: 36px; border: 2px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; font-size: 16px; font-family: inherit; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+            <i class="ti ti-chevron-left"></i>
+          </button>
+          <span id="wallpaperName" style="flex: 1; text-align: center; font-size: 12px; color: #d4c5b0; font-weight: 500;">Queenstown</span>
+          <button id="wallpaperNext" style="width: 36px; height: 36px; border: 2px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; font-size: 16px; font-family: inherit; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+            <i class="ti ti-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- MAIN CONTENT -->
+    <div id="mainContent" style="display: grid; grid-template-rows: auto 1fr; gap: 0; background: transparent;">
+      <!-- HEADER -->
+      <div style="background: linear-gradient(135deg, var(--darkest) 0%, var(--dark) 100%); padding: 2rem; border-bottom: 3px solid var(--primary);">
+        <div style="display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
+          <input type="text" id="taskInput" placeholder="Add a work task..." style="flex: 1; min-width: 300px; padding: 14px 18px; border: 2px solid var(--primary); border-radius: 10px; font-size: 16px; background: var(--dark); color: #d4c5b0; font-family: inherit;" />
+          <select id="projectInput" style="padding: 14px 18px; border: 2px solid var(--primary); border-radius: 10px; font-size: 15px; background: var(--dark); color: #d4c5b0; font-family: inherit; min-width: 140px; cursor: pointer;">
+            <option value="">Project</option>
+          </select>
+          <select id="frequencyInput" style="padding: 14px 18px; border: 2px solid var(--primary); border-radius: 10px; font-size: 15px; background: var(--dark); color: #d4c5b0; font-family: inherit; min-width: 130px; cursor: pointer;">
+            <option value="once">Once</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+          <input type="date" id="dateInput" style="padding: 14px 18px; border: 2px solid var(--primary); border-radius: 10px; font-size: 15px; background: var(--dark); color: #d4c5b0; font-family: inherit; min-width: 160px; cursor: pointer; color-scheme: dark;" />
+          <button id="addBtn" style="padding: 14px 24px; border: 2px solid var(--primary); border-radius: 10px; background: var(--primary); color: #1a1410; cursor: pointer; font-weight: 600; font-size: 16px; font-family: inherit; white-space: nowrap;">
+            <i class="ti ti-plus" style="font-size: 18px;"></i> Add
+          </button>
+        </div>
+        
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button id="sortPriority" style="padding: 10px 16px; border: 1px solid var(--primary); border-radius: 10px; background: transparent; color: var(--primary); cursor: pointer; font-size: 14px; font-family: inherit; white-space: nowrap; font-weight: 500;">By Priority</button>
+          <button id="sortDate" style="padding: 10px 16px; border: 1px solid var(--primary); border-radius: 10px; background: transparent; color: var(--primary); cursor: pointer; font-size: 14px; font-family: inherit; white-space: nowrap; font-weight: 500;">By Date</button>
+          <button id="sortProject" style="padding: 10px 16px; border: 1px solid var(--primary); border-radius: 10px; background: transparent; color: var(--primary); cursor: pointer; font-size: 14px; font-family: inherit; white-space: nowrap; font-weight: 500;">By Project</button>
+        </div>
+      </div>
+      
+      <!-- TASK LIST -->
+      <div id="listWrapper" style="overflow-y: auto; padding: 2rem; background: rgba(15,13,10,0.7); display: grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap: 16px; align-content: start;"></div>
+    </div>
+  </div>
+
+  <script>
+    console.log('=== WORK TASKS DASHBOARD ===');
+
+    // ============ WALLPAPER DEFINITIONS - SCENIC GRADIENTS ============
+    const wallpapers = [
+      { 
+        name: 'Queenstown Lake', 
+        bg: `linear-gradient(180deg, 
+          #1a3a52 0%,
+          #1f4a62 15%,
+          #2a5a72 30%,
+          #3d6a82 45%,
+          #4a7a92 60%,
+          #5a6a72 75%,
+          #3a4a52 90%,
+          #1a1410 100%
+        )`
+      },
+      { 
+        name: 'Remarkables Peak', 
+        bg: `linear-gradient(180deg,
+          #8b5a3c 0%,
+          #9b6a4c 10%,
+          #5a4a3c 20%,
+          #7a6a52 35%,
+          #4a3a2c 50%,
+          #6a5a4a 65%,
+          #3a2a1c 80%,
+          #1a1410 100%
+        )`
+      },
+      { 
+        name: 'Alpine Sunset', 
+        bg: `linear-gradient(180deg,
+          #d4845a 0%,
+          #c4745a 10%,
+          #b4644a 20%,
+          #a4544a 30%,
+          #8b5a42 45%,
+          #6a4a38 60%,
+          #4a3a2a 75%,
+          #1a1410 100%
+        )`
+      },
+      { 
+        name: 'Snow Peak', 
+        bg: `linear-gradient(180deg,
+          #e8e8e8 0%,
+          #d8d8d8 5%,
+          #8b9bb3 15%,
+          #7a8ba3 25%,
+          #5a7a93 35%,
+          #4a6a83 50%,
+          #3a5a73 65%,
+          #2a4a63 80%,
+          #1a1410 100%
+        )`
+      },
+      { 
+        name: 'Mountain Mist', 
+        bg: `linear-gradient(180deg,
+          #9ba8b3 0%,
+          #8b98a3 10%,
+          #7b8893 20%,
+          #6b7883 30%,
+          #5a6a72 45%,
+          #4a5a62 60%,
+          #3a4a52 75%,
+          #1a1410 100%
+        )`
+      },
+      { 
+        name: 'Golden Hour', 
+        bg: `linear-gradient(180deg,
+          #d4a574 0%,
+          #c49464 10%,
+          #b4845a 20%,
+          #a47450 35%,
+          #945a44 50%,
+          #744a38 65%,
+          #543a2c 80%,
+          #1a1410 100%
+        )`
+      }
+    ];
+
+    let currentWallpaper = parseInt(localStorage.getItem('selectedWallpaper')) || 0;
+
+    function applyWallpaper(index) {
+      if (!wallpapers[index]) return;
+      currentWallpaper = index;
+      localStorage.setItem('selectedWallpaper', index);
+      
+      // Apply wallpaper to body
+      document.body.style.background = wallpapers[index].bg;
+      document.body.style.backgroundAttachment = 'fixed';
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+      
+      document.getElementById('wallpaperName').textContent = wallpapers[index].name;
+      console.log('✓ Wallpaper:', wallpapers[index].name);
+    }
+
+    document.getElementById('wallpaperPrev').addEventListener('click', () => {
+      applyWallpaper((currentWallpaper - 1 + wallpapers.length) % wallpapers.length);
+    });
+
+    document.getElementById('wallpaperNext').addEventListener('click', () => {
+      applyWallpaper((currentWallpaper + 1) % wallpapers.length);
+    });
+
+    // ============ THEME DEFINITIONS ============
+    const themes = {
+      autumn: { primary: '#d4a574', secondary: '#c97a4a', dark: '#2a2319', darkest: '#1a1410', accent: '#8b6f47' },
+      spring: { primary: '#90c695', secondary: '#7ab88d', dark: '#1a2819', darkest: '#0f1810', accent: '#5a8f5f' },
+      winter: { primary: '#7dd3fc', secondary: '#38bdf8', dark: '#1a2838', darkest: '#0f1820', accent: '#0284c7' }
+    };
+
+    let currentTheme = localStorage.getItem('selectedTheme') || 'autumn';
+
+    function applyTheme(themeName) {
+      const theme = themes[themeName];
+      if (!theme) return;
+      currentTheme = themeName;
+      localStorage.setItem('selectedTheme', themeName);
+      document.documentElement.style.setProperty('--primary', theme.primary);
+      document.documentElement.style.setProperty('--secondary', theme.secondary);
+      document.documentElement.style.setProperty('--dark', theme.dark);
+      document.documentElement.style.setProperty('--darkest', theme.darkest);
+      document.documentElement.style.setProperty('--accent', theme.accent);
+      refreshDisplay();
+      console.log('✓ Theme:', themeName);
+    }
+
+    document.getElementById('themeAutumn').addEventListener('click', () => applyTheme('autumn'));
+    document.getElementById('themeSpring').addEventListener('click', () => applyTheme('spring'));
+    document.getElementById('themeWinter').addEventListener('click', () => applyTheme('winter'));
+
+    // ============ DATA MANAGEMENT ============
+    let allTasks = JSON.parse(localStorage.getItem('workTasks')) || [];
+    let allProjects = JSON.parse(localStorage.getItem('workProjects')) || [];
+    let currentView = 'today';
+    let currentSort = 'priority';
+
+    const taskInput = document.getElementById('taskInput');
+    const projectInput = document.getElementById('projectInput');
+    const frequencyInput = document.getElementById('frequencyInput');
+    const dateInput = document.getElementById('dateInput');
+    const addBtn = document.getElementById('addBtn');
+    const listWrapper = document.getElementById('listWrapper');
+    const projectsList = document.getElementById('projectsList');
+    const addProjectBtn = document.getElementById('addProjectBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const statsBtn = document.getElementById('statsBtn');
+    const lastSync = document.getElementById('lastSync');
+
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+
+    // ============ UTILITIES ============
+    function updateSyncTime() {
+      lastSync.textContent = 'Last: ' + new Date().toLocaleTimeString();
+    }
+
+    function saveTasks() {
+      localStorage.setItem('workTasks', JSON.stringify(allTasks));
+      updateSyncTime();
+    }
+
+    function saveProjects() {
+      localStorage.setItem('workProjects', JSON.stringify(allProjects));
+      updateSyncTime();
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr + 'T00:00:00');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      if (date.getTime() === today.getTime()) return 'Today';
+      if (date.getTime() === tomorrow.getTime()) return 'Tomorrow';
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const datePart = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return dayName + ' ' + datePart;
+    }
+
+    function isOverdue(dateStr) {
+      if (!dateStr) return false;
+      const date = new Date(dateStr + 'T00:00:00');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return date.getTime() < today.getTime();
+    }
+
+    // ============ PROJECT MANAGEMENT ============
+    function updateProjectSelects() {
+      projectInput.innerHTML = '<option value="">Project</option>';
+      allProjects.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        projectInput.appendChild(opt);
+      });
+    }
+
+    function renderProjectsList() {
+      projectsList.innerHTML = '';
+      allProjects.forEach(proj => {
+        const btn = document.createElement('button');
+        btn.style.cssText = `width: 100%; text-align: left; padding: 12px 1rem; border: none; background: transparent; color: #d4c5b0; cursor: pointer; font-size: 14px; border-left: 4px solid ${proj.color}; display: flex; align-items: center; overflow: hidden; font-family: inherit;`;
+        btn.innerHTML = `<i class="ti ti-folder" style="margin-right: 8px; font-size: 16px; flex-shrink: 0;"></i><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${proj.name}</span>`;
+        btn.addEventListener('click', () => {
+          currentView = 'project';
+          document.querySelectorAll('.view-btn').forEach(b => {
+            b.style.borderLeft = '4px solid transparent';
+            b.style.color = '#d4c5b0';
+          });
+          projectInput.value = proj.id;
+          refreshDisplay();
+        });
+        projectsList.appendChild(btn);
+      });
+    }
+
+    addProjectBtn.addEventListener('click', () => {
+      const name = prompt('Project name:');
+      if (name && name.trim()) {
+        const colors = ['#c97a4a', '#d4a574', '#8b6f47'];
+        allProjects.push({
+          id: Date.now(),
+          name: name.trim(),
+          color: colors[allProjects.length % colors.length]
+        });
+        saveProjects();
+        updateProjectSelects();
+        renderProjectsList();
+      }
+    });
+
+    // ============ VIEW & SORT ============
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        currentView = this.dataset.view;
+        document.querySelectorAll('.view-btn').forEach(b => {
+          b.style.borderLeft = '4px solid transparent';
+          b.style.color = '#d4c5b0';
+        });
+        this.style.borderLeft = '4px solid var(--primary)';
+        this.style.color = 'var(--primary)';
+        refreshDisplay();
+      });
+    });
+
+    document.getElementById('sortPriority').addEventListener('click', () => { currentSort = 'priority'; refreshDisplay(); });
+    document.getElementById('sortDate').addEventListener('click', () => { currentSort = 'date'; refreshDisplay(); });
+    document.getElementById('sortProject').addEventListener('click', () => { currentSort = 'project'; refreshDisplay(); });
+
+    // ============ TASK MANAGEMENT ============
+    function addTask() {
+      const text = taskInput.value.trim();
+      if (!text) { alert('⚠️ Enter a task name'); return; }
+      
+      allTasks.push({
+        id: Date.now(),
+        text,
+        priority: 'none',
+        project: projectInput.value,
+        frequency: frequencyInput.value,
+        date: dateInput.value,
+        completed: false,
+        subtasks: [],
+        createdAt: new Date().toISOString()
+      });
+      
+      saveTasks();
+      taskInput.value = '';
+      projectInput.value = '';
+      frequencyInput.value = 'once';
+      dateInput.value = today;
+      refreshDisplay();
+      taskInput.focus();
+    }
+
+    // Handle recurring tasks
+    function handleRecurringTask(task) {
+      if (task.completed && task.frequency !== 'once') {
+        const taskDate = new Date(task.date + 'T00:00:00');
+        let nextDate = new Date(taskDate);
+        
+        if (task.frequency === 'daily') {
+          nextDate.setDate(nextDate.getDate() + 1);
+        } else if (task.frequency === 'weekly') {
+          nextDate.setDate(nextDate.getDate() + 7);
+        } else if (task.frequency === 'monthly') {
+          nextDate.setMonth(nextDate.getMonth() + 1);
+        } else if (task.frequency === 'yearly') {
+          nextDate.setFullYear(nextDate.getFullYear() + 1);
+        }
+        
+        const nextDateStr = nextDate.toISOString().split('T')[0];
+        
+        // Create a new instance of the recurring task
+        allTasks.push({
+          id: Date.now() + Math.random(),
+          text: task.text,
+          priority: task.priority,
+          project: task.project,
+          frequency: task.frequency,
+          date: nextDateStr,
+          completed: false,
+          subtasks: task.subtasks.map(s => ({ ...s, id: Date.now() + Math.random(), completed: false })),
+          createdAt: new Date().toISOString(),
+          parentId: task.id
+        });
+        
+        saveTasks();
+      }
+    }
+
+    addBtn.addEventListener('click', addTask);
+    taskInput.addEventListener('keypress', e => { if (e.key === 'Enter') addTask(); });
+
+    // ============ STATISTICS ============
+    statsBtn.addEventListener('click', () => {
+      const total = allTasks.length;
+      const completed = allTasks.filter(t => t.completed).length;
+      const pending = total - completed;
+      const overdue = allTasks.filter(t => !t.completed && isOverdue(t.date)).length;
+      const totalSubtasks = allTasks.reduce((sum, t) => sum + t.subtasks.length, 0);
+      const completedSubtasks = allTasks.reduce((sum, t) => sum + t.subtasks.filter(s => s.completed).length, 0);
+      
+      alert(`📊 STATISTICS\n\nTasks: ${total}\n✓ Completed: ${completed}\n⏳ Pending: ${pending}\n🔴 Overdue: ${overdue}\n\nSubtasks: ${totalSubtasks}\n✓ Completed: ${completedSubtasks}\n\nCompletion: ${total > 0 ? Math.round((completed / total) * 100) : 0}%`);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      if (confirm('⚠️ Delete ALL tasks? Cannot undo!')) {
+        allTasks = [];
+        saveTasks();
+        refreshDisplay();
+        alert('✓ All tasks cleared');
+      }
+    });
+
+    // ============ FILTERING ============
+    function getFilteredTasks() {
+      let filtered = allTasks;
+      
+      if (currentView === 'today') {
+        filtered = allTasks.filter(t => {
+          const mainTaskToday = !t.completed && t.date === today;
+          const hasSubtaskToday = t.subtasks && t.subtasks.some(s => !s.completed && s.date === today);
+          return mainTaskToday || hasSubtaskToday;
+        });
+      } else if (currentView === 'upcoming') {
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        filtered = allTasks.filter(t => !t.completed && t.date && t.date > today && t.date <= nextWeek.toISOString().split('T')[0]);
+      } else if (currentView === 'overdue') {
+        filtered = allTasks.filter(t => !t.completed && isOverdue(t.date));
+      } else if (currentView === 'project' && projectInput.value) {
+        filtered = allTasks.filter(t => !t.completed && t.project === projectInput.value);
+      }
+      
+      return filtered.sort((a, b) => {
+        if (currentSort === 'priority') {
+          const pOrder = { 'p1': 0, 'p2': 1, 'p3': 2, 'none': 3 };
+          return (pOrder[a.priority] || 3) - (pOrder[b.priority] || 3);
+        } else if (currentSort === 'date') {
+          return (a.date || '9999-12-31').localeCompare(b.date || '9999-12-31');
+        } else if (currentSort === 'project') {
+          return (a.project || '').toString().localeCompare(b.project || '');
+        }
+        return 0;
+      });
+    }
+
+    // ============ DISPLAY ============
+    function refreshDisplay() {
+      const filtered = getFilteredTasks();
+      listWrapper.innerHTML = '';
+      
+      if (filtered.length === 0) {
+        listWrapper.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 4rem 2rem; color: var(--primary);"><i class="ti ti-inbox" style="font-size: 64px; display: block; margin-bottom: 1rem;"></i><p style="margin: 0; font-size: 18px;">No tasks here yet!</p></div>';
+        return;
+      }
+      
+      filtered.forEach(task => {
+        const isOver = isOverdue(task.date) && !task.completed;
+        const completedSubtasks = task.subtasks.filter(s => s.completed).length;
+        
+        const taskCard = document.createElement('div');
+        taskCard.style.cssText = `border: 2px solid ${isOver ? '#a85a42' : 'var(--primary)'}; border-radius: 14px; background: #1a1410; overflow: hidden;`;
+        
+        const header = document.createElement('div');
+        header.style.cssText = `display: flex; align-items: flex-start; gap: 14px; padding: 20px; background: ${task.completed ? 'var(--dark)' : '#1a1410'};`;
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = task.completed;
+        checkbox.style.cssText = 'width: 24px; height: 24px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; margin-top: 2px;';
+        checkbox.addEventListener('change', () => {
+          task.completed = checkbox.checked;
+          saveTasks();
+          if (checkbox.checked) {
+            handleRecurringTask(task);
+          }
+          refreshDisplay();
+        });
+        header.appendChild(checkbox);
+        
+        const content = document.createElement('div');
+        content.style.cssText = 'flex: 1; min-width: 0;';
+        
+        const title = document.createElement('div');
+        title.style.cssText = `font-weight: 600; font-size: 18px; color: ${task.completed ? '#8b6f47' : '#d4c5b0'}; text-decoration: ${task.completed ? 'line-through' : 'none'}; word-break: break-word;`;
+        title.textContent = task.text;
+        content.appendChild(title);
+        
+        const meta = document.createElement('div');
+        meta.style.cssText = 'display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap;';
+        
+        if (task.date) {
+          const dateSpan = document.createElement('span');
+          dateSpan.style.cssText = `background: ${isOver ? '#a85a4220' : 'var(--dark)'}; padding: 6px 12px; border-radius: 8px; font-size: 13px; color: ${isOver ? '#a85a42' : 'var(--primary)'}; border: 1px solid ${isOver ? '#a85a42' : 'var(--primary)'}; white-space: nowrap;`;
+          dateSpan.innerHTML = '<i class="ti ti-calendar" style="font-size: 13px; margin-right: 5px;"></i>' + formatDate(task.date) + (isOver && !task.completed ? ' ⚠' : '');
+          meta.appendChild(dateSpan);
+        }
+        
+        if (task.project) {
+          const proj = allProjects.find(p => p.id == task.project);
+          if (proj) {
+            const projBadge = document.createElement('span');
+            projBadge.style.cssText = `background: ${proj.color}20; padding: 6px 12px; border-radius: 8px; font-size: 13px; color: ${proj.color}; border: 1px solid ${proj.color}; white-space: nowrap;`;
+            projBadge.textContent = proj.name;
+            meta.appendChild(projBadge);
+          }
+        }
+
+        if (task.frequency && task.frequency !== 'once') {
+          const freqLabels = { 'daily': '📅 Daily', 'weekly': '📅 Weekly', 'monthly': '📅 Monthly', 'yearly': '📅 Yearly' };
+          const freqBadge = document.createElement('span');
+          freqBadge.style.cssText = 'background: var(--dark); padding: 6px 12px; border-radius: 8px; font-size: 13px; color: var(--primary); border: 1px solid var(--primary); white-space: nowrap;';
+          freqBadge.textContent = freqLabels[task.frequency] || task.frequency;
+          meta.appendChild(freqBadge);
+        }
+
+        if (task.subtasks && task.subtasks.length > 0) {
+          const subtaskBadge = document.createElement('span');
+          subtaskBadge.style.cssText = 'background: var(--dark); padding: 6px 12px; border-radius: 8px; font-size: 13px; color: var(--primary); border: 1px solid var(--primary); white-space: nowrap;';
+          subtaskBadge.innerHTML = '<i class="ti ti-checklist" style="font-size: 13px; margin-right: 5px;"></i>' + completedSubtasks + '/' + task.subtasks.length;
+          meta.appendChild(subtaskBadge);
+        }
+        
+        content.appendChild(meta);
+        header.appendChild(content);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.style.cssText = 'background: var(--primary); border: none; color: #1a1410; cursor: pointer; padding: 10px 14px; font-size: 20px; flex-shrink: 0; border-radius: 8px;';
+        deleteBtn.innerHTML = '<i class="ti ti-trash" style="color: #1a1410;"></i>';
+        deleteBtn.addEventListener('click', () => {
+          allTasks = allTasks.filter(t => t.id !== task.id);
+          saveTasks();
+          refreshDisplay();
+        });
+        header.appendChild(deleteBtn);
+        
+        taskCard.appendChild(header);
+
+        const subtaskSection = document.createElement('div');
+        subtaskSection.style.cssText = 'border-top: 2px solid var(--primary); background: var(--dark); padding: 16px 18px;';
+        
+        if (task.subtasks && task.subtasks.length > 0) {
+          task.subtasks.forEach(subtask => {
+            const subtaskRow = document.createElement('div');
+            subtaskRow.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #1a1410; flex-wrap: wrap;';
+            
+            const subtaskCheckbox = document.createElement('input');
+            subtaskCheckbox.type = 'checkbox';
+            subtaskCheckbox.checked = subtask.completed;
+            subtaskCheckbox.style.cssText = 'width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0;';
+            subtaskCheckbox.addEventListener('change', () => {
+              subtask.completed = subtaskCheckbox.checked;
+              saveTasks();
+              refreshDisplay();
+            });
+            subtaskRow.appendChild(subtaskCheckbox);
+            
+            const subtaskLabel = document.createElement('span');
+            subtaskLabel.style.cssText = 'flex: 1; font-size: 15px; color: ' + (subtask.completed ? '#666' : '#d4c5b0') + '; text-decoration: ' + (subtask.completed ? 'line-through' : 'none') + '; min-width: 150px;';
+            subtaskLabel.textContent = subtask.text;
+            subtaskRow.appendChild(subtaskLabel);
+
+            if (subtask.date) {
+              const subtaskDateBadge = document.createElement('span');
+              subtaskDateBadge.style.cssText = 'background: #1a1410; padding: 4px 8px; border-radius: 6px; font-size: 12px; color: var(--primary); border: 1px solid var(--primary); white-space: nowrap;';
+              subtaskDateBadge.innerHTML = '<i class="ti ti-calendar" style="font-size: 11px; margin-right: 3px;"></i>' + formatDate(subtask.date);
+              subtaskRow.appendChild(subtaskDateBadge);
+            }
+            
+            const subtaskDeleteBtn = document.createElement('button');
+            subtaskDeleteBtn.style.cssText = 'background: var(--primary); border: none; color: #1a1410; cursor: pointer; padding: 8px 12px; font-size: 18px; flex-shrink: 0; border-radius: 8px;';
+            subtaskDeleteBtn.innerHTML = '<i class="ti ti-trash" style="color: #1a1410;"></i>';
+            subtaskDeleteBtn.addEventListener('click', () => {
+              task.subtasks = task.subtasks.filter(s => s.id !== subtask.id);
+              saveTasks();
+              refreshDisplay();
+            });
+            subtaskRow.appendChild(subtaskDeleteBtn);
+            
+            subtaskSection.appendChild(subtaskRow);
+          });
+        }
+        
+        const addSubtaskRow = document.createElement('div');
+        addSubtaskRow.style.cssText = 'display: flex; gap: 8px; margin-top: ' + (task.subtasks && task.subtasks.length > 0 ? '12px' : '0') + '; flex-wrap: wrap; padding: 12px; border-radius: 8px; background: #2a2319;';
+        
+        const subtaskInput = document.createElement('input');
+        subtaskInput.type = 'text';
+        subtaskInput.placeholder = 'Add subtask...';
+        subtaskInput.style.cssText = 'flex: 1; min-width: 200px; padding: 10px 12px; border: 2px solid var(--primary); border-radius: 8px; font-size: 14px; background: #1a1410; color: #d4c5b0; font-family: inherit;';
+        
+        const subtaskDateInput = document.createElement('input');
+        subtaskDateInput.type = 'date';
+        subtaskDateInput.style.cssText = 'padding: 10px 12px; border: 2px solid var(--primary); border-radius: 8px; font-size: 14px; background: #1a1410; color: #d4c5b0; font-family: inherit; min-width: 130px; cursor: pointer; color-scheme: dark;';
+        subtaskDateInput.value = task.date || today;
+        
+        const subtaskBtn = document.createElement('button');
+        subtaskBtn.style.cssText = 'padding: 10px 1.2rem; border: 2px solid var(--primary); border-radius: 8px; background: var(--primary); color: #1a1410; cursor: pointer; font-weight: 600; font-size: 16px; font-family: inherit; flex-shrink: 0;';
+        subtaskBtn.innerHTML = '<i class="ti ti-plus"></i>';
+        subtaskBtn.addEventListener('click', () => {
+          const text = subtaskInput.value.trim();
+          const date = subtaskDateInput.value;
+          if (text) {
+            task.subtasks.push({
+              id: Date.now(),
+              text: text,
+              date: date,
+              completed: false
+            });
+            saveTasks();
+            subtaskInput.value = '';
+            subtaskDateInput.value = task.date || today;
+            refreshDisplay();
+          }
+        });
+        
+        subtaskInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') subtaskBtn.click();
+        });
+        
+        addSubtaskRow.appendChild(subtaskInput);
+        addSubtaskRow.appendChild(subtaskDateInput);
+        addSubtaskRow.appendChild(subtaskBtn);
+        subtaskSection.appendChild(addSubtaskRow);
+        
+        taskCard.appendChild(subtaskSection);
+        listWrapper.appendChild(taskCard);
+      });
+    }
+
+    // ============ INIT ============
+    updateSyncTime();
+    updateProjectSelects();
+    renderProjectsList();
+    applyTheme(currentTheme);
+    applyWallpaper(currentWallpaper);
+    refreshDisplay();
+    console.log('✓ Ready');
+  </script>
+</body>
+</html>
