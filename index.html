@@ -2331,7 +2331,7 @@ function todoItemHtml(t){
         ${t.note?`<div class="todo-note">${esc(t.note)}</div>`:''}
         <div class="todo-meta">
           <span class="todo-cat-badge ${catCss}">${esc(t.category)}</span>
-          ${dueInfo?`<span class="todo-due ${dueInfo.cls}">${dueInfo.label}`:''}${dueInfo?`</span>`:''}
+          ${dueInfo?`<span class="todo-due ${dueInfo.cls}" style="cursor:pointer" title="Change due date" onclick="editTaskDue(${t.id})">${dueInfo.label}`:''}${dueInfo?`</span>`:(t.done?'':`<span class="todo-due future" style="cursor:pointer" title="Set due date" onclick="editTaskDue(${t.id})">📅 Set date</span>`)}
           <span style="font-size:0.62rem;color:var(--t4);font-weight:700;text-transform:capitalize">${t.priority}</span>
           ${t.recur&&t.recur!=='none'?`<span style="font-size:0.62rem;padding:2px 7px;border-radius:20px;background:rgba(106,0,204,0.1);color:var(--purple);font-weight:800">🔁 ${esc(t.recur)}</span>`:''}
           ${subs.length>0?`<span style="font-size:0.62rem;color:var(--t4);font-weight:700">☑ ${subsDone}/${subs.length}</span>`:''}
@@ -2460,6 +2460,34 @@ window.editSubtaskDue=function(tid,si){
     save(trimmed);
   }
 };
+function openDatePicker(cur,onPick){
+  const btn=(window.event&&window.event.currentTarget)||(window.event&&window.event.target)||null;
+  const r=btn&&btn.getBoundingClientRect?btn.getBoundingClientRect():{left:innerWidth/2,bottom:innerHeight/2};
+  const inp=document.createElement('input');inp.type='date';inp.value=cur||'';
+  inp.style.cssText='position:fixed;left:'+Math.round(r.left)+'px;top:'+Math.round(r.bottom)+'px;width:1px;height:1px;opacity:0;border:0;padding:0;z-index:9999';
+  document.body.appendChild(inp);
+  let done=false;const cleanup=()=>setTimeout(()=>{if(inp.parentNode)inp.remove();},0);
+  inp.addEventListener('change',()=>{if(done)return;done=true;onPick(inp.value||'');cleanup();});
+  inp.addEventListener('blur',()=>setTimeout(()=>{if(!done)cleanup();},300));
+  try{if(typeof inp.showPicker!=='function')throw 0;inp.showPicker();return true;}catch(e){inp.remove();return false;}
+}
+window.editTaskDue=function(id){
+  const t=state.todos.find(t=>t.id===id);if(!t)return;
+  if(window.event&&window.event.stopPropagation)window.event.stopPropagation();
+  const save=async v=>{t.due=v;if(!v)t.dueTime='';renderTodos();await saveData();};
+  if(openDatePicker(t.due,save))return;
+  const val=prompt('Due date (YYYY-MM-DD), blank to clear:',t.due||'');
+  if(val===null)return;const v=val.trim();
+  if(v&&!/^\d{4}-\d{2}-\d{2}$/.test(v)){alert('Use format YYYY-MM-DD');return;}
+  save(v);
+};
+// Any date field in the app: clicking anywhere on it opens the calendar (not just the small icon)
+document.addEventListener('click',e=>{
+  const el=e.target;
+  if(el&&el.tagName==='INPUT'&&el.type==='date'&&el.style.opacity!=='0'&&typeof el.showPicker==='function'){
+    try{el.showPicker();}catch(_){}
+  }
+});
 window.toggleTodo=async function(id){
   const t=state.todos.find(t=>t.id===id);
   if(!t)return;
